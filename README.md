@@ -1,93 +1,66 @@
-# Digital Persona App Blueprint ("Digital Arjun")
+# Digital Persona API ("Digital Arjun" Starter)
 
-This repository now contains a practical starter plan for building an app where a person can create a private, verified digital version of themselves.
+Yes — now we are actually building.
 
-## Vision
-Create an application where each user can:
-1. Sign in and verify identity.
-2. Train a personal "digital twin" on their writing, voice, preferences, and decision style.
-3. Chat with that twin and optionally let it reply in controlled contexts.
-4. Save, update, and version their twin over time.
+This repo contains a working MVP backend for creating a verified user and attaching a digital persona profile that can answer in that user's style.
 
-## Core Product Requirements
+## What is implemented
+- User registration (`/users/register`)
+- User verification gate (`/users/{user_id}/verify`)
+- Persona create/update for verified users only (`/persona/upsert`)
+- Basic chat endpoint with boundary-aware safe mode (`/chat`)
+- Health check (`/health`)
+- API tests for the end-to-end user journey
 
-### 1) Identity and Ownership
-- Strong sign-in (email + OAuth + optional phone OTP).
-- Government ID + selfie/liveness verification for "verified twin" badge.
-- Consent flow explaining where twin can/cannot act.
-- User can export or permanently delete their twin data.
+## Quickstart
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload
+```
 
-### 2) Personality Capture Pipeline
-Collect data only with explicit consent:
-- Text corpus: chats, docs, notes, social posts.
-- Voice samples: optional, for voice clone.
-- Preference quiz: values, tone, boundaries, taboo topics.
-- Memory seeds: biography timeline (key life events, beliefs, relationships).
+Then open:
+- Swagger UI: `http://127.0.0.1:8000/docs`
+- Health: `http://127.0.0.1:8000/health`
 
-### 3) Twin Model Design (Recommended Hybrid)
-- **Base LLM** for language generation.
-- **RAG memory store** for factual personal history.
-- **Style adapter** (few-shot + preference profile) for tone consistency.
-- **Policy layer** for safety + action constraints.
+## Example flow
+1. Register user:
+```bash
+curl -X POST http://127.0.0.1:8000/users/register \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Arjun","email":"arjun@example.com"}'
+```
 
-### 4) Behavior Controls
-- "How close should replies be to me?" slider.
-- Topic guardrails (allowed / blocked categories).
-- Confidence indicator: "sounds like you" score.
-- "Ask real me first" mode for high-stakes responses.
+2. Verify user:
+```bash
+curl -X POST http://127.0.0.1:8000/users/<user_id>/verify
+```
 
-### 5) Multi-User Platform
-Each verified user gets their own tenant-scoped persona data:
-- Isolation at DB level (tenant_id everywhere).
-- Encrypted storage for user artifacts.
-- Per-user model config and memory index.
+3. Create persona:
+```bash
+curl -X POST http://127.0.0.1:8000/persona/upsert \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "user_id":"<user_id>",
+    "persona_name":"Digital Arjun",
+    "speaking_style":"calm and direct",
+    "beliefs":["truth first"],
+    "boundaries":["financial advice"],
+    "sample_phrases":["Let me think clearly"]
+  }'
+```
 
-### 6) Security & Compliance
-- Encrypt at rest + in transit.
-- Audit logs for all persona edits and AI actions.
-- Regional data handling controls.
-- Age gating and abuse prevention.
+4. Chat in safe mode:
+```bash
+curl -X POST http://127.0.0.1:8000/chat \
+  -H 'Content-Type: application/json' \
+  -d '{"user_id":"<user_id>","message":"Give me financial advice","mode":"safe"}'
+```
 
-## Suggested Tech Stack (MVP)
-- **Frontend:** Next.js + Tailwind + Auth UI.
-- **Backend:** FastAPI or Node.js (NestJS/Express).
-- **DB:** Postgres + pgvector.
-- **Object storage:** S3-compatible bucket.
-- **AI orchestration:** LangGraph or custom orchestrator.
-- **LLM provider:** OpenAI-compatible API.
-- **Identity verification:** Persona / Onfido / Stripe Identity.
-
-## Data Model (Minimal)
-- `users`
-- `verification_sessions`
-- `persona_profiles`
-- `persona_memories`
-- `persona_style_examples`
-- `persona_versions`
-- `conversation_logs`
-- `consent_records`
-
-## MVP Delivery Plan (6 Weeks)
-1. **Week 1:** Auth + user profile + consent screens.
-2. **Week 2:** Verification provider integration.
-3. **Week 3:** Persona ingestion (text + quiz) + embeddings.
-4. **Week 4:** Twin chat endpoint (RAG + style prompts).
-5. **Week 5:** Persona controls + safety rules + audit logging.
-6. **Week 6:** Testing, red-team prompts, launch beta for 20 users.
-
-## "Exact Like Me" Reality Check
-A twin can get very close, but never perfectly identical in every scenario. To maximize similarity:
-- Use more high-quality personal examples.
-- Keep memories structured and updated.
-- Add rejection behavior: when uncertain, ask clarifying questions in your style.
-- Continuously score output similarity and retrain prompts/adapters.
-
-## Responsible Use Requirements
-- Explicit consent from every person cloned.
-- No cloning public figures without permission.
-- No autonomous financial/legal decisions without human approval.
-- Clear watermark/label when a response is AI-generated.
-
----
-
-If you want, the next step is to scaffold this into code (frontend + backend + schema + first chat endpoint) in this repo.
+## Next build steps
+- Replace in-memory stores with Postgres + pgvector.
+- Add real identity verification (Persona/Onfido/Stripe Identity).
+- Add auth + tenant isolation.
+- Add richer memory retrieval and scoring for "sounds-like-you" confidence.
+- Add frontend dashboard for profile capture and testing.
